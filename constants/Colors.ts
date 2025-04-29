@@ -8,6 +8,7 @@ const tintColorDark = '#fff';
 
 export const Colors = {
   primary: '#2B2D42',
+  primaryLight: 'rgba(43, 45, 66, 0.6)',
   secondary: '#8D99AE',
   white: '#FFFFFF',
   light: {
