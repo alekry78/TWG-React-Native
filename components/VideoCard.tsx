@@ -15,7 +15,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ title, thumbnail, date, on
             <Image source={{ uri: thumbnail }} style={styles.thumbnail} />
             <View style={styles.content}>
                 <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{title}</Text>
-                <Text style={styles.date}>{date}</Text>
+                <Text style={styles.date}>{new Date(date).toLocaleDateString("pl-PL", { day: '2-digit', month: '2-digit', year: 'numeric' })}</Text>
             </View>
         </TouchableOpacity>
     );
@@ -27,12 +27,12 @@ const cardWidth = (width - 48) / 2;
 const styles = StyleSheet.create({
     container: {
         width: cardWidth,
-        marginBottom: 16,
+        marginRight:20,
     },
     thumbnail: {
         width: '100%',
         height: cardWidth * 0.6,
-        borderRadius: 12,
+        borderRadius: 16,
         marginBottom: 8,
     },
     content: {
