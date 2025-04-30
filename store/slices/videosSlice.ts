@@ -4,6 +4,7 @@ import { Video } from '@/types/video';
 
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Helper to transform YouTube API response to our Video type
 const transformYouTubeResponse = (items: any[]): Video[] => {
@@ -14,9 +15,16 @@ const transformYouTubeResponse = (items: any[]): Video[] => {
         thumbnail: item.snippet.thumbnails.high.url,
         videoUrl: `https://youtube.com/watch?v=${item.id.videoId}`,
         date: item.snippet.publishedAt,
-        category: item.category
+        category: item.category,
+        channelTitle: item.snippet.channelTitle
     }));
 };
+
+interface CacheEntry {
+    data: Video[];
+    timestamp: number;
+    nextPageToken?: string | null;
+}
 
 interface VideosState {
     byCategory: {
@@ -26,6 +34,7 @@ interface VideosState {
         'javascript': Video[];
     };
     searchResults: Video[];
+    nextPageToken: string | null;
     loading: {
         byCategory: Record<string, boolean>;
         search: boolean;
@@ -35,6 +44,10 @@ interface VideosState {
         search: string | null;
     };
     sortBy: 'date' | 'title' | 'relevance';
+    cache: {
+        byCategory: Record<string, CacheEntry>;
+        bySearch: Record<string, CacheEntry>;
+    };
 }
 
 const initialState: VideosState = {
@@ -45,6 +58,7 @@ const initialState: VideosState = {
         'javascript': [],
     },
     searchResults: [],
+    nextPageToken: null,
     loading: {
         byCategory: {},
         search: false,
@@ -54,17 +68,35 @@ const initialState: VideosState = {
         search: null,
     },
     sortBy: 'date',
+    cache: {
+        byCategory: {},
+        bySearch: {},
+    },
+};
+
+const isCacheValid = (timestamp: number) => {
+    return Date.now() - timestamp < CACHE_DURATION;
 };
 
 export const fetchVideosByCategory = createAsyncThunk(
     'videos/fetchByCategory',
-    async (category: keyof VideosState['byCategory']) => {
+    async (category: keyof VideosState['byCategory'], { getState }) => {
+        const state = getState() as { videos: VideosState };
+        const cachedData = state.videos.cache.byCategory[category];
+
+        // Check if we have valid cached data
+        if (cachedData && isCacheValid(cachedData.timestamp)) {
+            console.log("Using cached data for category:", category);
+            return { category, videos: cachedData.data };
+        }
+
         try {
+            console.log("Fetching fresh data for category:", category);
             const response = await axios.get(`${YOUTUBE_API_URL}/search`, {
                 params: {
                     part: 'snippet',
                     maxResults: 10,
-                    q: `${category} programming tutorial`,
+                    q: `${category}`,
                     type: 'video',
                     key: YOUTUBE_API_KEY,
                     order: 'date',
@@ -88,20 +120,41 @@ export const fetchVideosByCategory = createAsyncThunk(
 
 export const searchVideos = createAsyncThunk(
     'videos/search',
-    async (query: string) => {
+    async ({ query, pageToken }: { query: string; pageToken?: string | null }, { getState }) => {
+        const state = getState() as { videos: VideosState };
+        const cacheKey = `${query}-${pageToken || 'initial'}`;
+        const cachedData = state.videos.cache.bySearch[cacheKey];
+
+        // Only use cache for initial searches, not for pagination
+        if (!pageToken && cachedData && isCacheValid(cachedData.timestamp)) {
+            console.log("Using cached search results for:", query);
+            return {
+                videos: cachedData.data,
+                nextPageToken: cachedData.nextPageToken,
+                isNewSearch: !pageToken
+            };
+        }
+
         try {
+            console.log("Fetching fresh search results for:", query);
             const response = await axios.get(`${YOUTUBE_API_URL}/search`, {
                 params: {
                     part: 'snippet',
                     maxResults: 20,
-                    q: `${query} programming tutorial`,
+                    q: `${query}`,
                     type: 'video',
                     key: YOUTUBE_API_KEY,
                     order: 'relevance',
+                    pageToken: pageToken || undefined,
                 },
             });
 
-            return transformYouTubeResponse(response.data.items);
+            const videos = transformYouTubeResponse(response.data.items);
+            return {
+                videos,
+                nextPageToken: response.data.nextPageToken || null,
+                isNewSearch: !pageToken
+            };
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 throw new Error(error.response?.data?.error?.message || 'Failed to search videos');
@@ -120,6 +173,13 @@ const videosSlice = createSlice({
         },
         clearSearchResults: (state) => {
             state.searchResults = [];
+            state.nextPageToken = null;
+        },
+        clearCache: (state) => {
+            state.cache = {
+                byCategory: {},
+                bySearch: {},
+            };
         },
     },
     extraReducers: (builder) => {
@@ -133,6 +193,11 @@ const videosSlice = createSlice({
                 const { category, videos } = action.payload;
                 state.byCategory[category] = videos;
                 state.loading.byCategory[category] = false;
+                // Cache the results
+                state.cache.byCategory[category] = {
+                    data: videos,
+                    timestamp: Date.now(),
+                };
             })
             .addCase(fetchVideosByCategory.rejected, (state, action) => {
                 const category = action.meta.arg;
@@ -144,7 +209,20 @@ const videosSlice = createSlice({
                 state.error.search = null;
             })
             .addCase(searchVideos.fulfilled, (state, action) => {
-                state.searchResults = action.payload;
+                const { videos, nextPageToken, isNewSearch } = action.payload;
+                if (isNewSearch) {
+                    state.searchResults = videos;
+                    // Cache only initial search results
+                    const cacheKey = `${action.meta.arg.query}-initial`;
+                    state.cache.bySearch[cacheKey] = {
+                        data: videos,
+                        timestamp: Date.now(),
+                        nextPageToken,
+                    };
+                } else {
+                    state.searchResults = [...state.searchResults, ...videos];
+                }
+                state.nextPageToken = nextPageToken;
                 state.loading.search = false;
             })
             .addCase(searchVideos.rejected, (state, action) => {
@@ -154,5 +232,5 @@ const videosSlice = createSlice({
     },
 });
 
-export const { setSortBy, clearSearchResults } = videosSlice.actions;
+export const { setSortBy, clearSearchResults, clearCache } = videosSlice.actions;
 export default videosSlice.reducer; 

@@ -6,4 +6,5 @@ export interface Video {
     videoUrl: string;
     date: string;
     category: 'react-native' | 'react' | 'typescript' | 'javascript';
+    channelTitle: string;
 } 

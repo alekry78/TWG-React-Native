@@ -1,14 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { useDebounce } from '@/hooks/useDebounce';
+import { router, usePathname } from 'expo-router';
 
 interface SearchHeaderProps {
     onSearch: (text: string) => void;
-    onSettingsPress: () => void;
+    onSettingsPress?: () => void;
+    initialValue?: string;
+    showSettings?: boolean;
+    directSearch?: boolean;
 }
 
-export const SearchHeader: React.FC<SearchHeaderProps> = ({ onSearch, onSettingsPress }) => {
+export const SearchHeader: React.FC<SearchHeaderProps> = ({
+    onSearch,
+    onSettingsPress,
+    initialValue = '',
+    showSettings = false,
+    directSearch = false
+}) => {
+    const [searchText, setSearchText] = useState(initialValue);
+    const debouncedSearchText = useDebounce(searchText, 500);
+    const pathname = usePathname();
+
+    useEffect(() => {
+        setSearchText(initialValue);
+    }, [initialValue]);
+
+    useEffect(() => {
+        if (debouncedSearchText.trim()) {
+            onSearch(debouncedSearchText);
+            if (directSearch && router.canGoBack() && !pathname.includes('search')) {
+                router.push({
+                    pathname: '/(tabs)/search',
+                    params: { query: debouncedSearchText }
+                });
+            }
+        }
+    }, [debouncedSearchText, directSearch]);
+
+    const handleChangeText = (text: string) => {
+        setSearchText(text);
+        if (!text.trim()) {
+            onSearch('');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
@@ -17,13 +55,21 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ onSearch, onSettings
                     style={styles.input}
                     placeholder="Search videos"
                     placeholderTextColor={Colors.primaryLight}
-                    onChangeText={onSearch}
+                    onChangeText={handleChangeText}
+                    value={searchText}
                     numberOfLines={1}
                 />
+                {searchText.length > 0 && (
+                    <TouchableOpacity onPress={() => handleChangeText('')} style={styles.clearButton}>
+                        <Ionicons name="close-circle" size={20} color={Colors.primary} />
+                    </TouchableOpacity>
+                )}
             </View>
-            <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
-                <Ionicons name="settings-outline" size={24} color={Colors.primary} />
-            </TouchableOpacity>
+            {showSettings && (
+                <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
+                    <Ionicons name="settings-outline" size={24} color={Colors.primary} />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -61,6 +107,9 @@ const styles = StyleSheet.create({
         margin: 0,
     },
     settingsButton: {
+        padding: 4,
+    },
+    clearButton: {
         padding: 4,
     },
 }); 

@@ -31,7 +31,7 @@ export default function HomeScreen() {
 
   const handleSearch = (text: string) => {
     if (text.trim()) {
-      dispatch(searchVideos(text));
+      dispatch(searchVideos({ query: text }));
       router.push('/(tabs)/search');
     }
   };
@@ -48,10 +48,10 @@ export default function HomeScreen() {
   };
 
   const handleShowMore = (category: string) => {
-    // router.push({
-    //   pathname: '/(tabs)/search',
-    //   params: { category }
-    // });
+    router.push({
+      pathname: '/(tabs)/search',
+      params: { category }
+    });
   };
 
   const renderCategory = ({ item, index }: { item: typeof categories[number], index: number }) => (
@@ -71,6 +71,8 @@ export default function HomeScreen() {
       <SearchHeader
         onSearch={handleSearch}
         onSettingsPress={handleSettingsPress}
+        showSettings={true}
+        directSearch
       />
       <FlatList
         data={categories}
