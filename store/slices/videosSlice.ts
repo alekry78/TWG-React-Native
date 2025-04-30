@@ -45,7 +45,7 @@ interface VideosState {
         byCategory: Record<string, string | null>;
         search: string | null;
     };
-    sortBy: 'date' | 'title' | 'relevance';
+    sortBy: 'latest' | 'oldest' | 'popular';
     cache: {
         byCategory: Record<string, CacheEntry>;
         bySearch: Record<string, CacheEntry>;
@@ -69,7 +69,7 @@ const initialState: VideosState = {
         byCategory: {},
         search: null,
     },
-    sortBy: 'date',
+    sortBy: 'latest',
     cache: {
         byCategory: {},
         bySearch: {},
@@ -124,7 +124,8 @@ export const searchVideos = createAsyncThunk(
     'videos/search',
     async ({ query, pageToken }: { query: string; pageToken?: string | null }, { getState }) => {
         const state = getState() as { videos: VideosState };
-        const cacheKey = `${query}-${pageToken || 'initial'}`;
+        const sortBy = state.videos.sortBy;
+        const cacheKey = `${query}-${pageToken || 'initial'}-${sortBy}`;
         const cachedData = state.videos.cache.bySearch[cacheKey];
 
         // Only use cache for initial searches, not for pagination
@@ -146,12 +147,20 @@ export const searchVideos = createAsyncThunk(
                     q: `${query}`,
                     type: 'video',
                     key: YOUTUBE_API_KEY,
-                    order: 'relevance',
+                    order: sortBy === 'latest' ? 'date' :
+                        sortBy === 'oldest' ? 'date' :
+                            'viewCount',
                     pageToken: pageToken || undefined,
                 },
             });
 
-            const videos = transformYouTubeResponse(response.data.items);
+            let videos = transformYouTubeResponse(response.data.items);
+
+            // If sorting by oldest, reverse the results
+            if (sortBy === 'oldest') {
+                videos = videos.reverse();
+            }
+
             return {
                 videos,
                 nextPageToken: response.data.nextPageToken || null,

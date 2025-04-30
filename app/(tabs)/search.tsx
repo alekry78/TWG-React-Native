@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, FlatList, Text, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { searchVideos, clearSearchResults } from '@/store/slices/videosSlice';
+import { searchVideos, clearSearchResults, setSortBy } from '@/store/slices/videosSlice';
 import { SearchHeader } from '@/components/SearchHeader';
 import { VideoCard } from '@/components/VideoCard';
 import { Colors } from '@/constants/Colors';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { SortModal } from '@/components/SortModal';
 
 export default function SearchScreen() {
   const { category, query } = useLocalSearchParams();
   const dispatch = useDispatch<AppDispatch>();
   const [searchQuery, setSearchQuery] = useState('');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isSortModalVisible, setIsSortModalVisible] = useState(false);
 
   const searchResults = useSelector((state: RootState) => state.videos.searchResults);
   const nextPageToken = useSelector((state: RootState) => state.videos.nextPageToken);
@@ -73,6 +75,13 @@ export default function SearchScreen() {
     }
   };
 
+  const handleSort = (option: 'latest' | 'oldest' | 'popular') => {
+    dispatch(setSortBy(option));
+    if (searchQuery.trim()) {
+      dispatch(searchVideos({ query: searchQuery }));
+    }
+  };
+
   const renderFooter = () => {
     if (!loading || !searchResults.length) return null;
     return (
@@ -89,9 +98,11 @@ export default function SearchScreen() {
         <Text style={styles.searchInfoText}>
           {searchResults.length} results found for: <Text style={{ fontFamily: 'Poppins-SemiBold' }}>{searchQuery}</Text>
         </Text>
-        <Text style={styles.searchInfoText}>
-          Sort by: <Text style={{ fontFamily: 'Poppins-SemiBold' }}>{sortBy}</Text>
-        </Text>
+        <TouchableOpacity onPress={() => setIsSortModalVisible(true)}>
+          <Text style={[styles.searchInfoText, { width: '100%', textAlign: 'right' }]}>
+            Sort by: <Text style={{ fontFamily: 'Poppins-SemiBold' }}>{sortBy}</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -149,9 +160,10 @@ export default function SearchScreen() {
                 title={item.title}
                 thumbnail={item.thumbnail}
                 date={item.date}
-                onPress={() => { }}
                 fullWidth
                 channelTitle={item.channelTitle}
+                id={item.id}
+                video={item}
               />
             </View>
           )}
@@ -174,6 +186,12 @@ export default function SearchScreen() {
       />
       {renderSearchInfo()}
       {renderContent()}
+      <SortModal
+        visible={isSortModalVisible}
+        onClose={() => setIsSortModalVisible(false)}
+        onConfirm={handleSort}
+        currentSort={sortBy}
+      />
     </View>
   );
 }
