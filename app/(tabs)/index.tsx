@@ -40,13 +40,6 @@ export default function HomeScreen() {
     // router.push('/(tabs)/settings');
   };
 
-  const handleVideoPress = (video: Video) => {
-    // router.push({
-    //   pathname: '/(tabs)/video/[id]',
-    //   params: { id: video.id }
-    // });
-  };
-
   const handleShowMore = (category: string) => {
     router.push({
       pathname: '/(tabs)/search',
@@ -59,7 +52,6 @@ export default function HomeScreen() {
       title={item.title}
       videos={videos[item.key] || []}
       onShowMore={() => handleShowMore(item.key)}
-      onVideoPress={handleVideoPress}
       isLoading={loading[item.key]}
       error={error[item.key]}
       isLast={index === categories.length - 1}

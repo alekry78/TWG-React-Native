@@ -16,7 +16,9 @@ const transformYouTubeResponse = (items: any[]): Video[] => {
         videoUrl: `https://youtube.com/watch?v=${item.id.videoId}`,
         date: item.snippet.publishedAt,
         category: item.category,
-        channelTitle: item.snippet.channelTitle
+        channelTitle: item.snippet.channelTitle,
+        viewCount: item.statistics?.viewCount || 0,
+        likeCount: item.statistics?.likeCount || 0
     }));
 };
 

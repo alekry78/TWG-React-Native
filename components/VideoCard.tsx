@@ -1,24 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { VideoModal } from './VideoModal';
+import { Video } from '@/types/video';
 
 interface VideoCardProps {
     title: string;
     thumbnail: string;
     date: string;
-    onPress: () => void;
     fullWidth?: boolean;
     channelTitle?: string;
+    id: string;
+    video: Video;
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({
     title,
     thumbnail,
     date,
-    onPress,
     fullWidth = false,
-    channelTitle
+    channelTitle,
+    id,
+    video
 }) => {
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
     const containerStyle = [
         styles.container,
         fullWidth ? styles.fullWidth : styles.halfWidth
@@ -29,21 +35,33 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         fullWidth ? styles.fullWidthThumbnail : styles.halfWidthThumbnail
     ];
 
+    const handlePress = () => {
+            setIsModalVisible(true);
+    };
+
     return (
-        <TouchableOpacity onPress={onPress} style={containerStyle}>
-            <Image source={{ uri: thumbnail }} style={thumbnailStyle} />
-            <View style={styles.content}>
-                {channelTitle && (
-                    <Text style={styles.channelTitle} numberOfLines={1} ellipsizeMode="tail">
-                        {channelTitle}
-                    </Text>
-                )}
-                <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{title}</Text>
-                <View style={styles.metaContainer}>
-                    <Text style={styles.date}>{new Date(date).toLocaleDateString("pl-PL", { year: 'numeric', month: 'numeric', day: 'numeric' })}</Text>
+        <>
+            <TouchableOpacity onPress={handlePress} style={containerStyle}>
+                <Image source={{ uri: thumbnail }} style={thumbnailStyle} />
+                <View style={styles.content}>
+                    {channelTitle && (
+                        <Text style={styles.channelTitle} numberOfLines={1} ellipsizeMode="tail">
+                            {channelTitle}
+                        </Text>
+                    )}
+                    <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{title}</Text>
+                    <View style={styles.metaContainer}>
+                        <Text style={styles.date}>{new Date(date).toLocaleDateString("pl-PL", { year: 'numeric', month: 'numeric', day: 'numeric' })}</Text>
+                    </View>
                 </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+
+            <VideoModal
+                video={video}
+                visible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+            />
+        </>
     );
 };
 
@@ -71,7 +89,7 @@ const styles = StyleSheet.create({
     fullWidthThumbnail: {
         width: '100%',
         height: 200,
-        marginBottom:16,
+        marginBottom: 16,
     },
     content: {
         flex: 1,
@@ -84,8 +102,8 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     metaContainer: {
-        width:'100%',
-        alignItems:'flex-end',
+        width: '100%',
+        alignItems: 'flex-end',
     },
     channelTitle: {
         fontSize: 12,

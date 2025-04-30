@@ -8,7 +8,6 @@ interface CategorySectionProps {
     title: string;
     videos: Video[];
     onShowMore: () => void;
-    onVideoPress: (video: Video) => void;
     isLoading?: boolean;
     error?: string | null;
     isLast?: boolean;
@@ -18,7 +17,6 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     title,
     videos,
     onShowMore,
-    onVideoPress,
     isLoading,
     error,
     isLast,
@@ -69,7 +67,9 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                         title={item.title}
                         thumbnail={item.thumbnail}
                         date={item.date}
-                        onPress={() => onVideoPress(item)}
+                        id={item.id}
+                        video={item}
+                    
                     />
                 )}
                 keyExtractor={(item) => item.id}

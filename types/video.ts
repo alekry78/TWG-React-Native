@@ -7,4 +7,6 @@ export interface Video {
     date: string;
     category: 'react-native' | 'react' | 'typescript' | 'javascript';
     channelTitle: string;
+    viewCount: number;
+    likeCount: number;
 } 
