@@ -1,50 +1,49 @@
-# Welcome to your Expo app 👋
+# 📱 Rekrutacyjne zadanie React Native (Expo + EAS Build)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+---
 
-## Get started
+## 🚀 Uruchomienie projektu lokalnie
 
-1. Install dependencies
+Poniżej znajdują się instrukcje, jak zbudować i uruchomić aplikację lokalnie na emulatorze Androida lub fizycznym urządzeniu.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+### ✅ Wymagania
 
-   ```bash
-    npx expo start
-   ```
+- Node.js + npm
+- Expo CLI: `npm install -g expo-cli`
+- EAS CLI: `npm install -g eas-cli`
+- Android Studio (do emulatora) lub fizyczny telefon
+- Konto Expo (może być darmowe): https://expo.dev/signup
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🛠️ Instalacja
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. **Sklonuj repozytorium:**
 
 ```bash
-npm run reset-project
+git clone https://github.com/alekry78/TWOJE-REPO.git
+cd TWOJE-REPO
+```
+2. **Zainstaluj zalezności:**
+```bash
+npm install
+```
+3. **Zaloguj się do Expo:**
+```bash
+eas login
+```
+4. **Zbuduj aplikację**
+```bash
+eas build --platform android --profile development
+```
+5.  **Pobierz plik .apk i zainstaluj go**
+```bash
+adb install path/to/app.apk
+```
+6. **Uruchom bundler**
+```bash
+npx expo start --dev-client
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
