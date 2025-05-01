@@ -34,15 +34,17 @@ npm install
 ```bash
 eas login
 ```
-4. **Zbuduj aplikację**
+4. **Stwórz plik .env i dodaj do niego EXPO_PUBLIC_YOUTUBE_API_KEY wraz ze swoim kluczem YoutubeAPI**
+
+5. **Zbuduj aplikację**
 ```bash
 eas build --platform android --profile development
 ```
-5.  **Pobierz plik .apk i zainstaluj go**
+6.  **Pobierz plik .apk i zainstaluj go**
 ```bash
 adb install path/to/app.apk
 ```
-6. **Uruchom bundler**
+7. **Uruchom bundler**
 ```bash
 npx expo start --dev-client
 ```
