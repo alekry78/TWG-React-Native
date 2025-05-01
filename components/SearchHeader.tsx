@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useDebounce } from '@/hooks/useDebounce';
 import { router, usePathname } from 'expo-router';
+import { SettingsModal } from './SettingsModal';
 
 interface SearchHeaderProps {
     onSearch: (text: string) => void;
@@ -21,6 +22,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
     directSearch = false
 }) => {
     const [searchText, setSearchText] = useState(initialValue);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
     const debouncedSearchText = useDebounce(searchText, 500);
     const pathname = usePathname();
 
@@ -66,10 +68,15 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
                 )}
             </View>
             {showSettings && (
-                <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
+                <TouchableOpacity onPress={() => setShowSettingsModal(true)} style={styles.settingsButton}>
                     <Ionicons name="settings-outline" size={24} color={Colors.primary} />
                 </TouchableOpacity>
             )}
+
+            <SettingsModal
+                visible={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
+            />
         </View>
     );
 };

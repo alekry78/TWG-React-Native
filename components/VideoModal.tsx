@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Dimensions
 import Video, { VideoRef } from 'react-native-video';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { Video as VideoType } from '@/types/video';
+import { Video as VideoType, Note } from '@/types/video';
 import PersonIcon from '@/assets/images/icons/person-icon.svg';
 import LikeIcon from '@/assets/images/icons/likes-icon.svg';
 import LeftArrowIcon from '@/assets/images/icons/leftarrow-icon.svg';
@@ -14,6 +14,7 @@ import PauseIcon from '@/assets/images/icons/pause-icon.svg';
 import PlayIcon from '@/assets/images/icons/play-icon.svg';
 import VolumeIcon from '@/assets/images/icons/volume-icon.svg';
 import FullscreenIcon from '@/assets/images/icons/fullscreen-icon.svg';
+import { NotesSection } from './NotesSection';
 
 interface VideoModalProps {
     video: VideoType | null;
@@ -31,6 +32,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, visible, onClose 
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [notes, setNotes] = useState<Note[]>([]);
 
     const formatTime = (seconds: number) => {
         const minutes = Math.floor(seconds / 60);
@@ -65,6 +67,14 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, visible, onClose 
         } else {
             videoRef.current?.presentFullscreenPlayer();
         }
+    };
+
+    const handleAddNote = (note: Omit<Note, 'id'>) => {
+        const newNote: Note = {
+            ...note,
+            id: Date.now().toString(),
+        };
+        setNotes(prevNotes => [...prevNotes, newNote]);
     };
 
     if (!video) return null;
@@ -160,6 +170,14 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, visible, onClose 
                             </View>
                         )}
 
+                        {isNotesOpen && (
+                            <NotesSection
+                                videoId={video.id}
+                                currentTime={currentTime}
+                                notes={notes}
+                                onAddNote={handleAddNote}
+                            />
+                        )}
                     </View>
                 </View>
             </View>
@@ -171,6 +189,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        paddingBottom:24,
     },
     header: {
         flexDirection: 'row',
@@ -250,7 +269,7 @@ const styles = StyleSheet.create({
         color: Colors.secondary,
     },
     descriptionContainer: {
-
+        
     },
     description: {
         fontSize: 12,
@@ -344,5 +363,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-    }
+    },
+    notesContainer: {
+        marginTop: 20,
+    },
 }); 

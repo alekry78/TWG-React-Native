@@ -1,3 +1,11 @@
+export interface Note {
+    id: string;
+    text: string;
+    timestamp: number;
+    videoTime: number;
+    videoId: string;
+}
+
 export interface Video {
     id: string;
     title: string;
@@ -9,4 +17,5 @@ export interface Video {
     channelTitle: string;
     viewCount: number;
     likeCount: number;
+    notes?: Note[];
 } 
