@@ -32,6 +32,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
         requestNotificationPermissions();
     }, []);
 
+    /**
+     * Loads saved notification settings from AsyncStorage.
+     * Retrieves the enabled state and notification time from persistent storage.
+     * If no settings are found, defaults are used.
+     * 
+     * @async
+     * @throws {Error} If there's an error reading from AsyncStorage
+     */
     const loadSettings = async () => {
         try {
             const settings = await AsyncStorage.getItem('notificationSettings');
@@ -45,11 +53,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
         }
     };
 
-    const saveSettings = async (enabled: boolean, time: Date) => {
+    /**
+     * Saves current notification settings to AsyncStorage.
+     * Stores both the enabled state and notification time.
+     * 
+     * @async
+     * @throws {Error} If there's an error writing to AsyncStorage
+     */
+    const saveSettings = async () => {
         try {
             await AsyncStorage.setItem('notificationSettings', JSON.stringify({
-                enabled,
-                time: time.toISOString(),
+                enabled: isEnabled,
+                time: notificationTime.toISOString(),
             }));
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -64,13 +79,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
         }
     };
 
-    const scheduleNotification = async (time: Date) => {
+    /**
+     * Schedules a daily notification at the specified time.
+     * Uses the current notificationTime state to set the trigger.
+     * 
+     * @async
+     * @throws {Error} If there's an error scheduling the notification
+     */
+    const scheduleNotification = async () => {
         await Notifications.cancelAllScheduledNotificationsAsync();
 
         if (!isEnabled) return;
 
-        const hours = time.getHours();
-        const minutes = time.getMinutes();
+        const hours = notificationTime.getHours();
+        const minutes = notificationTime.getMinutes();
 
         await Notifications.scheduleNotificationAsync({
             content: {
@@ -85,30 +107,62 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }
         });
     };
 
+    /**
+     * Toggles notification state and handles related operations.
+     * - Requests notification permissions if enabling
+     * - Schedules/cancels notifications based on new state
+     * - Updates persistent storage
+     * 
+     * @async
+     * @throws {Error} If there's an error with notification permissions or scheduling
+     */
     const toggleSwitch = async () => {
-        const newState = !isEnabled;
-        setIsEnabled(newState);
-        await saveSettings(newState, notificationTime);
-        if (newState) {
-            await scheduleNotification(notificationTime);
+        const newValue = !isEnabled;
+        setIsEnabled(newValue);
+
+        if (newValue) {
+            const { status } = await Notifications.requestPermissionsAsync();
+            if (status !== 'granted') {
+                setIsEnabled(false);
+                return;
+            }
+            await scheduleNotification();
         } else {
             await Notifications.cancelAllScheduledNotificationsAsync();
         }
+
+        await saveSettings();
     };
 
+    /**
+     * Handles time selection from the DateTimePicker.
+     * Updates the notification time and reschedules notifications if enabled.
+     * 
+     * @async
+     * @param {any} event - The event object from DateTimePicker
+     * @param {Date} [selectedTime] - The selected time, if any
+     * @throws {Error} If there's an error updating settings or scheduling notifications
+     */
     const handleTimeChange = async (event: any, selectedTime?: Date) => {
         setShowTimePicker(false);
         if (selectedTime) {
             setNotificationTime(selectedTime);
-            await saveSettings(isEnabled, selectedTime);
             if (isEnabled) {
-                await scheduleNotification(selectedTime);
+                await scheduleNotification();
+                await saveSettings();
             }
         }
     };
 
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    /**
+     * Formats a Date object into a localized time string.
+     * Uses 24-hour format for consistency.
+     * 
+     * @param {Date} date - The date to format
+     * @returns {string} Formatted time string in HH:MM format
+     */
+    const formatTime = (date: Date): string => {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     return (

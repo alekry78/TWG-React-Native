@@ -37,12 +37,6 @@ const notesSlice = createSlice({
             // Sort notes by timestamp
             state.byVideoId[videoId].sort((a, b) => a.timestamp - b.timestamp);
         },
-        // updateNote: (state, action: PayloadAction<{ id: string; videoId: string; content: string }>) => {
-        
-        // },
-        // deleteNote: (state, action: PayloadAction<{ id: string; videoId: string }>) => {
-        
-        // },
     },
 });
 

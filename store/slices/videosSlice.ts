@@ -1,12 +1,24 @@
+/**
+ * Videos Redux Slice
+ * 
+ * This slice manages the state for video content fetched from YouTube API.
+ * It handles video fetching by category, search functionality, caching, and sorting.
+ */
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { Video } from '@/types/video';
 
+// API Configuration
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-// Helper to transform YouTube API response to our Video type
+/**
+ * Transforms YouTube API response into our application's Video type
+ * @param items - Array of video items from YouTube API response
+ * @returns Array of transformed Video objects
+ */
 const transformYouTubeResponse = (items: any[]): Video[] => {
     return items.map(item => ({
         id: item.id.videoId,
@@ -22,12 +34,18 @@ const transformYouTubeResponse = (items: any[]): Video[] => {
     }));
 };
 
+/**
+ * Interface for cached data entries
+ */
 interface CacheEntry {
     data: Video[];
     timestamp: number;
     nextPageToken?: string | null;
 }
 
+/**
+ * Interface defining the shape of the videos state
+ */
 interface VideosState {
     byCategory: {
         'react-native': Video[];
@@ -52,6 +70,9 @@ interface VideosState {
     };
 }
 
+/**
+ * Initial state for the videos slice
+ */
 const initialState: VideosState = {
     byCategory: {
         'react-native': [],
@@ -76,17 +97,26 @@ const initialState: VideosState = {
     },
 };
 
+/**
+ * Checks if cached data is still valid based on timestamp
+ * @param timestamp - Timestamp of cached data
+ * @returns boolean indicating if cache is still valid
+ */
 const isCacheValid = (timestamp: number) => {
     return Date.now() - timestamp < CACHE_DURATION;
 };
 
+/**
+ * Async thunk for fetching videos by category
+ * Implements caching mechanism to reduce API calls
+ */
 export const fetchVideosByCategory = createAsyncThunk(
     'videos/fetchByCategory',
     async (category: keyof VideosState['byCategory'], { getState }) => {
         const state = getState() as { videos: VideosState };
         const cachedData = state.videos.cache.byCategory[category];
 
-        // Check if we have valid cached data
+        // Return cached data if valid
         if (cachedData && isCacheValid(cachedData.timestamp)) {
             console.log("Using cached data for category:", category);
             return { category, videos: cachedData.data };
@@ -120,6 +150,10 @@ export const fetchVideosByCategory = createAsyncThunk(
     }
 );
 
+/**
+ * Async thunk for searching videos
+ * Supports pagination and sorting
+ */
 export const searchVideos = createAsyncThunk(
     'videos/search',
     async ({ query, pageToken }: { query: string; pageToken?: string | null }, { getState }) => {
@@ -128,7 +162,7 @@ export const searchVideos = createAsyncThunk(
         const cacheKey = `${query}-${pageToken || 'initial'}-${sortBy}`;
         const cachedData = state.videos.cache.bySearch[cacheKey];
 
-        // Only use cache for initial searches, not for pagination
+        // Use cache only for initial searches, not for pagination
         if (!pageToken && cachedData && isCacheValid(cachedData.timestamp)) {
             console.log("Using cached search results for:", query);
             return {
@@ -156,7 +190,7 @@ export const searchVideos = createAsyncThunk(
 
             let videos = transformYouTubeResponse(response.data.items);
 
-            // If sorting by oldest, reverse the results
+            // Reverse results for oldest sort
             if (sortBy === 'oldest') {
                 videos = videos.reverse();
             }
@@ -175,17 +209,29 @@ export const searchVideos = createAsyncThunk(
     }
 );
 
+/**
+ * Redux slice for videos state management
+ */
 const videosSlice = createSlice({
     name: 'videos',
     initialState,
     reducers: {
+        /**
+         * Updates the sorting preference for videos
+         */
         setSortBy: (state, action: PayloadAction<VideosState['sortBy']>) => {
             state.sortBy = action.payload;
         },
+        /**
+         * Clears search results and pagination token
+         */
         clearSearchResults: (state) => {
             state.searchResults = [];
             state.nextPageToken = null;
         },
+        /**
+         * Clears all cached data
+         */
         clearCache: (state) => {
             state.cache = {
                 byCategory: {},
@@ -195,6 +241,7 @@ const videosSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            // Handle fetchVideosByCategory states
             .addCase(fetchVideosByCategory.pending, (state, action) => {
                 const category = action.meta.arg;
                 state.loading.byCategory[category] = true;
@@ -215,6 +262,7 @@ const videosSlice = createSlice({
                 state.loading.byCategory[category] = false;
                 state.error.byCategory[category] = action.error.message || 'Failed to fetch videos';
             })
+            // Handle searchVideos states
             .addCase(searchVideos.pending, (state) => {
                 state.loading.search = true;
                 state.error.search = null;

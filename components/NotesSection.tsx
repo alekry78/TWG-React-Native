@@ -4,6 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 import { Note } from '@/types/video';
 
+/**
+ * Props for the NotesSection component
+ * @interface NotesSectionProps
+ * @property {string} videoId - The ID of the current video
+ * @property {number} currentTime - Current playback time of the video
+ * @property {Note[]} notes - Array of existing notes
+ * @property {(note: Omit<Note, 'id'>) => void} onAddNote - Callback function when a new note is added
+ */
 interface NotesSectionProps {
     videoId: string;
     currentTime: number;
@@ -29,6 +37,13 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         console.log('notes', notes);
     }, [notes]);
 
+    /**
+     * Loads saved notes for the current video from AsyncStorage.
+     * Updates both local state and parent component with loaded notes.
+     * 
+     * @async
+     * @throws {Error} If there's an error reading from AsyncStorage
+     */
     const loadNotes = async () => {
         try {
             const storedNotes = await AsyncStorage.getItem(`notes_${videoId}`);
@@ -47,6 +62,13 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         }
     };
 
+    /**
+     * Saves notes to AsyncStorage for the current video.
+     * 
+     * @async
+     * @param {Note[]} updatedNotes - Array of notes to save
+     * @throws {Error} If there's an error writing to AsyncStorage
+     */
     const saveNotes = async (updatedNotes: Note[]) => {
         try {
             await AsyncStorage.setItem(`notes_${videoId}`, JSON.stringify(updatedNotes));
@@ -55,6 +77,14 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         }
     };
 
+    /**
+     * Handles adding a new note.
+     * Creates a new note with current timestamp and video time,
+     * updates local state, saves to storage, and notifies parent component.
+     * 
+     * @async
+     * @throws {Error} If there's an error saving the note
+     */
     const handleAddNote = () => {
         if (noteText.trim()) {
             const newNote: Note = {
@@ -73,12 +103,24 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         }
     };
 
+    /**
+     * Formats video time in seconds to MM:SS format.
+     * 
+     * @param {number} seconds - Time in seconds
+     * @returns {string} Formatted time string (MM:SS)
+     */
     const formatVideoTime = (seconds: number) => {
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = Math.floor(seconds % 60);
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
+    /**
+     * Renders a single note item in the FlatList.
+     * 
+     * @param {{ item: Note }} { item } - The note item to render
+     * @returns {JSX.Element} Rendered note item component
+     */
     const renderNoteItem = ({ item: note }: { item: Note }) => (
         <View style={styles.noteItem}>
             <Text style={styles.noteText}>{note.text}</Text>
@@ -124,7 +166,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     notesList: {
-       height:'50%'
+        height: '50%'
     },
     notesListContent: {
         paddingBottom: 8,
@@ -153,8 +195,8 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: 'Poppins-SemiBold',
         color: Colors.primary,
-        width:'100%',
-        textAlign:'right',
+        width: '100%',
+        textAlign: 'right',
     },
     noteText: {
         fontSize: 12,
