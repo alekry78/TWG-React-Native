@@ -23,8 +23,8 @@ Poniżej znajdują się instrukcje, jak zbudować i uruchomić aplikację lokaln
 1. **Sklonuj repozytorium:**
 
 ```bash
-git clone https://github.com/alekry78/TWOJE-REPO.git
-cd TWOJE-REPO
+git clone https://github.com/alekry78/TWG-React-Native.git
+cd TWG-React-Native
 ```
 2. **Zainstaluj zalezności:**
 ```bash
